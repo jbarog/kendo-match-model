@@ -1,0 +1,43 @@
+{
+  "name": "kendo-match-model",
+  "version": "1.0.0",
+  "description": "A model for unify format of a kendo match",
+  "main": "kendoMatchModel.js",
+  "scripts": {
+    "test": "npm run test:unit && npm run test:lint",
+    "test:lint": "eslint .",
+    "test:lint:fix": "eslint --fix .",
+    "ex": "eslint --init",
+    "test:unit": "jest --env=node"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jbarog/kendo-match-model.git"
+  },
+  "keywords": [
+    "kendo",
+    "match",
+    "keiko",
+    "score",
+    "ippon"
+  ],
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "author": "jbarog",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jbarog/kendo-match-model/issues"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.14.2",
+    "@babel/node": "^7.14.2",
+    "@babel/preset-env": "^7.14.2",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^7.26.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.23.0",
+    "jest": "^26.6.3"
+  },
+  "homepage": "https://github.com/jbarog/kendo-match-model#readme"
+}
