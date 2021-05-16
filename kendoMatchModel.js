@@ -6,7 +6,7 @@ class KendoMatchModel {
   // }
   static MAX_MATCH_POINTS = 2
 
-  static DEFAULT_POINTS = {
+  static POINT_TYPES = {
     men: 'M',
     kote: 'K',
     do: 'D',
@@ -35,7 +35,7 @@ class KendoMatchModel {
     l: this.setMatchSide(),
     r: this.setMatchSide(),
     isCurrent: false,
-    ...this.clearObjectKeys(this.validateMatchFields(preset), ['status', 'l', 'r', 'isCurrent']),
+    ...this.clearObjectKeys(this.parseMatchFields(preset), ['status', 'l', 'r', 'isCurrent']),
   })
 
   static newMatch = ({ leftName, rightName }) => this.setMatch({
@@ -43,17 +43,47 @@ class KendoMatchModel {
     r: { name: rightName },
   })
 
-  static validateMatchFields = (matchObject) => {
+  static parseMatchFields = (matchObject) => {
     const newMatchObject = matchObject && { ...matchObject };
     if (newMatchObject) {
       const matchStatus = newMatchObject.status;
       if (matchStatus && !Object.values(this.MATCH_STATUS).includes(matchStatus)) {
         newMatchObject.status = null;
       }
+      if (newMatchObject.isCurrent) {
+        newMatchObject.isCurrent = Boolean(newMatchObject.isCurrent);
+      }
+      ['l', 'r'].forEach((s) => {
+        if (newMatchObject[s]) {
+          newMatchObject[s] = this.parseMatchSideFields(newMatchObject[s]);
+        }
+      });
     }
     return newMatchObject;
   }
 
+  static parseMatchSideFields = (matchSideObject) => {
+    const newMatchSideObject = matchSideObject && { ...matchSideObject };
+    if (newMatchSideObject) {
+      const matchSidePoints = newMatchSideObject.points;
+      if (matchSidePoints && Array.isArray(matchSidePoints)) {
+        newMatchSideObject.points = matchSidePoints.filter(
+          (p) => Object.values(this.POINT_TYPES).includes(p),
+        );
+      } else {
+        newMatchSideObject.points = [];
+      }
+      if (newMatchSideObject.name) {
+        newMatchSideObject.name = String(newMatchSideObject.name);
+      }
+      if (newMatchSideObject.fault) {
+        newMatchSideObject.fault = Boolean(newMatchSideObject.fault);
+      }
+    }
+    return newMatchSideObject;
+  }
+
+  // private
   static clearObjectKeys = (originalObj, alowedKeys) => {
     if (originalObj && alowedKeys) {
       const newObj = alowedKeys.reduce((o, k) => {
