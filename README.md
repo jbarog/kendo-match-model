@@ -136,6 +136,25 @@ Returns:
 }
 ```
 
+### updateMatch
+Update some properties of a match
+```
+KendoMatchModel.updateMatch(currentMatch, { isCurrent: true })
+```
+
+### addPoint
+Add a point to a side
+```
+KendoMatchModel.addPoint(currentMatch, 'l', KendoMatchModel.POINT_TYPES.men)
+```
+
+### finishMatch
+When a match is finished a proper status is set and isCurrent will be false.
+```
+KendoMatchModel.finishMatch(currentMatch)
+```
+
+
 ### setMatch
 Input: Partial MATCHMODEL or null.
 ```
@@ -178,4 +197,16 @@ Returns:
   points: [],
   fault: false
 }
+```
+
+### isValidStatus
+Check status name validity
+```
+KendoMatchModel.isValidStatus('DRAW')//true
+```
+
+### isValidPoint
+Check point name validity
+```
+KendoMatchModel.isValidPoint('M')//true
 ```
