@@ -1,5 +1,7 @@
 import KendoMatchModel from '../kendoMatchModel';
 // const
+const NAME1 = 'john';
+const NAME2 = 'jack';
 const EMPTYMATCHSIDE = {
   name: '',
   points: [],
@@ -51,9 +53,10 @@ describe('set match side', () => {
     expect(newMatchSide).toMatchObject(matchingObject);
   });
   test('should ignore fields out of the model', () => {
-    const matchSideSettings = { ...FILLEDMATCHSIDE, ...{ other: 1 } };
+    const matchSideSettings = { ...FILLEDMATCHSIDE, ...{ other: 1, points: 2 } };
+    const matchingObject = { ...FILLEDMATCHSIDE, ...{ points: [] } };
     const newMatchSide = KendoMatchModel.setMatchSide(matchSideSettings);
-    expect(newMatchSide).toMatchObject(FILLEDMATCHSIDE);
+    expect(newMatchSide).toMatchObject(matchingObject);
   });
 });
 describe('set match', () => {
@@ -84,16 +87,63 @@ describe('set match', () => {
 });
 describe('new match', () => {
   test('set empty match', () => {
-    const NAME1 = 'john';
-    const NAME2 = 'jack';
     const matchingObject = {
       ...EMPTYMATCH,
-      ...{
-        l: { name: NAME1 },
-        r: { name: NAME2 },
-      },
     };
+    matchingObject.l.name = NAME1;
+    matchingObject.r.name = NAME2;
     const newMatch = KendoMatchModel.newMatch({ leftName: NAME1, rightName: NAME2 });
     expect(newMatch).toMatchObject(matchingObject);
+  });
+});
+describe('update match', () => {
+  test('set empty match', () => {
+    const newMatch = KendoMatchModel.newMatch({ leftName: NAME1, rightName: NAME2 });
+    const updatedMatch = KendoMatchModel.updateMatch(newMatch, { isCurrent: true });
+    const matchingObject = {
+      ...newMatch,
+      isCurrent: true,
+    };
+    expect(updatedMatch).toMatchObject(matchingObject);
+  });
+});
+describe('add point', () => {
+  test('set empty match', () => {
+    const newMatch = KendoMatchModel.newMatch({ leftName: NAME1, rightName: NAME2 });
+    let updatedMatch = KendoMatchModel.addPoint(newMatch, 'l', 'M');
+    expect(updatedMatch.l.points).toMatchObject(['M']);
+    updatedMatch = KendoMatchModel.addPoint(updatedMatch, 'r', 'K');
+    expect(updatedMatch.r.points).toMatchObject(['K']);
+    updatedMatch = KendoMatchModel.addPoint(updatedMatch, 'l', 'K');
+    expect(updatedMatch.l.points).toMatchObject(['M', 'K']);
+  });
+});
+describe('finish match', () => {
+  test('finish draw match', () => {
+    const newMatch = KendoMatchModel.newMatch({ leftName: NAME1, rightName: NAME2 });
+    let updatedMatch = KendoMatchModel.updateMatch(newMatch, { isCurrent: true });
+    expect(updatedMatch.isCurrent).toBe(true);
+    updatedMatch = KendoMatchModel.addPoint(updatedMatch, 'l', 'M');
+    updatedMatch = KendoMatchModel.addPoint(updatedMatch, 'r', 'K');
+    updatedMatch = KendoMatchModel.finishMatch(updatedMatch);
+    expect(updatedMatch.status).toBe(KendoMatchModel.MATCH_STATUS.draw);
+    expect(updatedMatch.isCurrent).toBe(false);
+  });
+  test('finish one point match', () => {
+    const newMatch = KendoMatchModel.newMatch({ leftName: NAME1, rightName: NAME2 });
+    let updatedMatch = KendoMatchModel.updateMatch(newMatch, { isCurrent: true });
+    updatedMatch = KendoMatchModel.addPoint(updatedMatch, 'l', 'M');
+    updatedMatch = KendoMatchModel.finishMatch(updatedMatch);
+    expect(updatedMatch.status).toBe(KendoMatchModel.MATCH_STATUS.onePoint);
+    expect(updatedMatch.isCurrent).toBe(false);
+  });
+  test('finish two points match', () => {
+    const newMatch = KendoMatchModel.newMatch({ leftName: NAME1, rightName: NAME2 });
+    let updatedMatch = KendoMatchModel.updateMatch(newMatch, { isCurrent: true });
+    updatedMatch = KendoMatchModel.addPoint(updatedMatch, 'l', 'M');
+    updatedMatch = KendoMatchModel.addPoint(updatedMatch, 'l', 'K');
+    updatedMatch = KendoMatchModel.finishMatch(updatedMatch);
+    expect(updatedMatch.status).toBe(null);
+    expect(updatedMatch.isCurrent).toBe(false);
   });
 });

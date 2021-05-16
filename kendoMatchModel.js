@@ -1,9 +1,4 @@
 class KendoMatchModel {
-  // MatchSideModel = {
-  //   name:{type:String},
-  //   points:{type:Array},
-  //   fault: {type:Boolean},
-  // }
   static MAX_MATCH_POINTS = 2
 
   static POINT_TYPES = {
@@ -23,64 +18,108 @@ class KendoMatchModel {
     extraTime: 'EXTRA_TIME',
   }
 
-  static setMatchSide = (preset) => ({
+  static setMatchSide = (preset = {}) => ({
     name: '',
     points: [],
     fault: false,
-    ...this.clearObjectKeys(preset, ['name', 'points', 'fault']),
+    ...this.clearObjectKeys(this.parseMatchSideFields(preset), ['name', 'points', 'fault']),
   })
 
-  static setMatch = (preset) => ({
+  static setMatch = (preset = {}) => this.updateMatch({
     status: null,
     l: this.setMatchSide(),
     r: this.setMatchSide(),
     isCurrent: false,
-    ...this.clearObjectKeys(this.parseMatchFields(preset), ['status', 'l', 'r', 'isCurrent']),
-  })
+  }, preset)
 
-  static newMatch = ({ leftName, rightName }) => this.setMatch({
-    l: { name: leftName },
-    r: { name: rightName },
-  })
+  static isValidStatus = (status) => Object.values(this.MATCH_STATUS).includes(status)
 
   static parseMatchFields = (matchObject) => {
-    const newMatchObject = matchObject && { ...matchObject };
-    if (newMatchObject) {
-      const matchStatus = newMatchObject.status;
-      if (matchStatus && !Object.values(this.MATCH_STATUS).includes(matchStatus)) {
-        newMatchObject.status = null;
+    const parsedMatchObject = matchObject && { ...matchObject };
+    if (parsedMatchObject) {
+      const matchStatus = parsedMatchObject.status;
+      if (matchStatus && !this.isValidStatus(matchStatus)) {
+        parsedMatchObject.status = null;
       }
-      if (newMatchObject.isCurrent) {
-        newMatchObject.isCurrent = Boolean(newMatchObject.isCurrent);
+      if (parsedMatchObject.isCurrent) {
+        parsedMatchObject.isCurrent = Boolean(parsedMatchObject.isCurrent);
       }
       ['l', 'r'].forEach((s) => {
-        if (newMatchObject[s]) {
-          newMatchObject[s] = this.parseMatchSideFields(newMatchObject[s]);
+        if (parsedMatchObject[s]) {
+          parsedMatchObject[s] = this.parseMatchSideFields(parsedMatchObject[s]);
         }
       });
     }
-    return newMatchObject;
+    return parsedMatchObject;
   }
 
+  static isValidPoint = (point) => Object.values(this.POINT_TYPES).includes(point)
+
   static parseMatchSideFields = (matchSideObject) => {
-    const newMatchSideObject = matchSideObject && { ...matchSideObject };
-    if (newMatchSideObject) {
-      const matchSidePoints = newMatchSideObject.points;
-      if (matchSidePoints && Array.isArray(matchSidePoints)) {
-        newMatchSideObject.points = matchSidePoints.filter(
-          (p) => Object.values(this.POINT_TYPES).includes(p),
-        );
-      } else {
-        newMatchSideObject.points = [];
+    const parsedMatchSideObject = matchSideObject && { ...matchSideObject };
+    if (parsedMatchSideObject) {
+      const matchSidePoints = parsedMatchSideObject.points;
+      if (matchSidePoints) {
+        if (Array.isArray(matchSidePoints)) {
+          parsedMatchSideObject.points = matchSidePoints.filter(this.isValidPoint);
+        } else {
+          delete parsedMatchSideObject.points;
+        }
       }
-      if (newMatchSideObject.name) {
-        newMatchSideObject.name = String(newMatchSideObject.name);
+      if (parsedMatchSideObject.name) {
+        parsedMatchSideObject.name = String(parsedMatchSideObject.name);
       }
-      if (newMatchSideObject.fault) {
-        newMatchSideObject.fault = Boolean(newMatchSideObject.fault);
+      if (parsedMatchSideObject.fault) {
+        parsedMatchSideObject.fault = Boolean(parsedMatchSideObject.fault);
       }
     }
-    return newMatchSideObject;
+    return parsedMatchSideObject;
+  }
+
+  static newMatch = ({ leftName, rightName, isCurrent }) => this.setMatch({
+    l: this.setMatchSide({ name: leftName }),
+    r: this.setMatchSide({ name: rightName }),
+    isCurrent,
+  })
+
+  static addPoint = (originalMatch, side, point) => {
+    const changes = { [side]: { points: [...originalMatch[side].points, point] } };
+    return this.updateMatch(originalMatch, changes);
+  }
+
+  static updateMatch = (originalMatch, changes) => {
+    const parsedChanges = this.clearObjectKeys(this.parseMatchFields(changes), ['status', 'l', 'r', 'isCurrent']);
+    const matchCloned = {
+      ...originalMatch,
+    };
+    Object.keys(parsedChanges).forEach((changeKey) => {
+      let changeValue = parsedChanges[changeKey];
+      if (typeof changeValue === 'object' && changeValue !== null) {
+        changeValue = {
+          ...(matchCloned[changeKey] || {}),
+          ...changeValue,
+        };
+      }
+      matchCloned[changeKey] = changeValue;
+    });
+
+    return matchCloned;
+  }
+
+  static finishMatch = (originalMatch) => {
+    const matchCloned = {
+      ...originalMatch,
+    };
+    matchCloned.isCurrent = false;
+    const sidePointsLenght = (side) => originalMatch[side].points.length;
+    let nextStatus = null;
+    if (sidePointsLenght('l') === sidePointsLenght('r')) {
+      nextStatus = this.MATCH_STATUS.draw;
+    } else if (Math.max(sidePointsLenght('l'), sidePointsLenght('r')) === 1) {
+      nextStatus = this.MATCH_STATUS.onePoint;
+    }
+    matchCloned.status = nextStatus;
+    return matchCloned;
   }
 
   // private
